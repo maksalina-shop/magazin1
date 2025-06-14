@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Магазин Максалины</title>
   <style>
     body {
@@ -63,36 +63,33 @@
   Загрузка товаров...
 </div>
 
-<!-- Подключаем PapaParse -->
-<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-
 <script>
-  const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSHUHz-WyjAqIAqUKqsYHBAzOlbyV1dKO6pqVCWTBtdRHOh5tihumAIWONw_tCi-WtF6mrlkbI5PPex/pub?output=csv';
+  const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSHUHz-WyjAqIAqUKqsYHBAzOlbyV1dKO6pqVCWTBtdRHOh5tihumAIWONw_tCi-WtF6mrlkbI5PPex/pub?gid=0&single=true&output=csv';
 
   function loadCSVData(url) {
-    Papa.parse(url, {
-      download: true,
-      header: true,
-      skipEmptyLines: true,
-      complete: function(results) {
-        renderProducts(results.data);
-      },
-      error: function(err) {
+    fetch(url)
+      .then(response => response.text())
+      .then(csv => {
+        const rows = csv.trim().split('\n').map(r => r.split(','));
+        const headers = rows.shift();
+        const products = rows.map(row => {
+          const item = {};
+          headers.forEach((h, i) => item[h.trim()] = row[i] ? row[i].trim() : '');
+          return item;
+        });
+        renderProducts(products);
+      })
+      .catch(err => {
         document.getElementById('product-list').innerText = 'Ошибка загрузки товаров.';
         console.error(err);
-      }
-    });
+      });
   }
 
   function renderProducts(products) {
     const container = document.getElementById('product-list');
     container.innerHTML = '';
-    if(products.length === 0) {
-      container.innerText = 'Товары не найдены.';
-      return;
-    }
     products.forEach(p => {
-      if (!p['Фото']) return; // пропускаем без фото
+      if (!p['Фото']) return; // не показывать без фото
       const card = document.createElement('div');
       card.className = 'product-card';
       card.innerHTML = `
@@ -110,4 +107,4 @@
 </script>
 
 </body>
-</html>
+</html>    
