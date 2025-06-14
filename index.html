@@ -2,101 +2,74 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Магазин Максалины</title>
   <style>
     body {
-      margin: 0;
-      font-family: Arial, sans-serif;
+      font-family: sans-serif;
       background: #f9f9f9;
-    }
-    header {
-      background-color: #4CAF50;
-      color: white;
-      padding: 16px;
-      text-align: center;
-      font-size: 24px;
-    }
-    .product-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      gap: 16px;
-      padding: 16px;
+      padding: 20px;
     }
     .product-card {
       background: white;
-      border-radius: 10px;
+      border-radius: 12px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.1);
       padding: 16px;
+      margin-bottom: 20px;
+      max-width: 300px;
     }
     .product-card img {
       width: 100%;
-      height: auto;
       border-radius: 8px;
     }
-    .product-card h3 {
-      margin: 10px 0 5px;
-    }
-    .product-card p {
-      margin: 5px 0;
-    }
-    .product-card .price {
-      color: #e91e63;
+    .price {
+      color: green;
       font-weight: bold;
+      margin-top: 10px;
     }
   </style>
 </head>
 <body>
 
-<header>Магазин Максалины</header>
+  <h1>🛍 Магазин Максалины</h1>
+  <div id="product-list">Загрузка товаров...</div>
 
-<div class="product-grid" id="product-list">Загрузка товаров...</div>
+  <script>
+    const API_KEY = 'AIzaSyBsBr12pt5Zbd65qJbaxmIn3w_mfkoLq7A';
+    const SHEET_ID = '1vTRh1c-R9UvQHxZqCIvQ6HGJH0PJLxBLn8RAImkGlrT4fCN8jBlagTDlCn7pf1M1yHUMaC4t-ZNa1S0';
+    const RANGE = 'Лист1!A2:F'; // Категория, подкатегория, название, описание, цена, фото
 
-<script>
-  const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSHUHz-WyjAqIAqUKqsYHBAzOlbyV1dKO6pqVCWTBtdRHOh5tihumAIWONw_tCi-WtF6mrlkbI5PPex/pub?gid=0&single=true&output=csv';
+    async function loadProducts() {
+      const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${RANGE}?key=${API_KEY}`;
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+        const rows = data.values;
 
-  async function loadProducts() {
-    try {
-      const res = await fetch(csvUrl);
-      const text = await res.text();
-      const rows = text.trim().split('\n').map(row => row.split(','));
-      const headers = rows.shift().map(h => h.trim().toLowerCase());
-      const products = rows.map(row => {
-        const obj = {};
-        headers.forEach((h, i) => obj[h] = row[i]?.trim() || '');
-        return obj;
-      });
-      render(products);
-    } catch (err) {
-      document.getElementById('product-list').innerText = 'Ошибка загрузки данных.';
-      console.error('Ошибка:', err);
+        const container = document.getElementById('product-list');
+        container.innerHTML = '';
+
+        rows.forEach(row => {
+          const [категория, подкатегория, название, описание, цена, ссылка] = row;
+          if (!ссылка) return;
+
+          const card = document.createElement('div');
+          card.className = 'product-card';
+          card.innerHTML = `
+            <img src="${ссылка}" alt="${название}">
+            <h3>${название}</h3>
+            <p><strong>Категория:</strong> ${категория} / ${подкатегория}</p>
+            <p>${описание || ''}</p>
+            <p class="price">${цена} ₽</p>
+          `;
+          container.appendChild(card);
+        });
+      } catch (error) {
+        document.getElementById('product-list').innerText = '❌ Ошибка загрузки данных.';
+        console.error('Ошибка:', error);
+      }
     }
-  }
 
-  function render(products) {
-    const container = document.getElementById('product-list');
-    container.innerHTML = '';
-    let shown = 0;
-    products.forEach(p => {
-      if (!p['ссылка на фото']) return;
-      const card = document.createElement('div');
-      card.className = 'product-card';
-      card.innerHTML = `
-        <img src="${p['ссылка на фото']}" alt="${p['название'] || ''}">
-        <h3>${p['название'] || 'Без названия'}</h3>
-        <p class="price">${p['цена'] || 'Цена не указана'} ₽</p>
-        ${p['описание'] ? `<p>${p['описание']}</p>` : ''}
-      `;
-      container.appendChild(card);
-      shown++;
-    });
-    if (shown === 0) {
-      container.innerHTML = '<p>Нет товаров для отображения. Проверь, заполнены ли ссылки на фото.</p>';
-    }
-  }
-
-  loadProducts();
-</script>
-
+    loadProducts();
+  </script>
 </body>
 </html>
