@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Магазин Максалины</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f2f2f2;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background-color: #4CAF50;
+      color: white;
+      padding: 10px;
+      text-align: center;
+      font-size: 24px;
+    }
+    .product-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 15px;
+      padding: 20px;
+    }
+    .product-card {
+      background: white;
+      border-radius: 10px;
+      padding: 15px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .product-card img {
+      width: 100%;
+      border-radius: 10px;
+    }
+    .product-card h3 {
+      margin: 10px 0 5px;
+    }
+    .product-card p {
+      margin: 5px 0;
+    }
+    .product-card .price {
+      font-weight: bold;
+      color: #e91e63;
+    }
+    .whatsapp-button {
+      display: inline-block;
+      background: #25D366;
+      color: white;
+      padding: 8px 12px;
+      margin-top: 10px;
+      border-radius: 6px;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+
+<header>Магазин Максалины</header>
+
+<div class="product-grid" id="product-list">
+  Загрузка товаров...
+</div>
+
+<script>
+  const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSHUHz-WyjAqIAqUKqsYHBAzOlbyV1dKO6pqVCWTBtdRHOh5tihumAIWONw_tCi-WtF6mrlkbI5PPex/pub?output=csv';
+
+  function loadCSVData(url) {
+    fetch(url)
+      .then(response => response.text())
+      .then(csv => {
+        const rows = csv.trim().split('\n').map(r => r.split(','));
+        const headers = rows.shift();
+        const products = rows.map(row => {
+          const item = {};
+          headers.forEach((h, i) => item[h.trim()] = row[i].trim());
+          return item;
+        });
+        renderProducts(products);
+      })
+      .catch(err => {
+        document.getElementById('product-list').innerText = 'Ошибка загрузки товаров.';
+        console.error(err);
+      });
+  }
+
+  function renderProducts(products) {
+    const container = document.getElementById('product-list');
+    container.innerHTML = '';
+    products.forEach(p => {
+      if (!p['Фото']) return; // пропускаем без фото
+      const card = document.createElement('div');
+      card.className = 'product-card';
+      card.innerHTML = `
+        <img src="${p['Фото']}" alt="${p['Название']}" />
+        <h3>${p['Название']}</h3>
+        <p class="price">${p['Цена']} ₽</p>
+        ${p['Описание'] ? `<p>${p['Описание']}</p>` : ''}
+        <a class="whatsapp-button" href="https://wa.me/${p['WhatsApp'] || '79000000000'}" target="_blank">Написать в WhatsApp</a>
+      `;
+      container.appendChild(card);
+    });
+  }
+
+  loadCSVData(csvUrl);
+</script>
+
+</body>
+</html>
